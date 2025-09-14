@@ -150,11 +150,30 @@
             justify-content: space-between;
             align-items: center;
             padding: 15px;
-            border-bottom: 1px solid #eee;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            background-color: white;
+            transition: all 0.3s;
+            cursor: grab;
+        }
+        
+        .video-item:active {
+            cursor: grabbing;
+        }
+        
+        .video-item.dragging {
+            opacity: 0.5;
+            background-color: #f8f9fa;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .video-item:hover {
+            background-color: #f8f9fa;
         }
         
         .video-item:last-child {
-            border-bottom: none;
+            margin-bottom: 0;
         }
         
         .video-info {
@@ -179,10 +198,23 @@
             margin-left: 10px;
         }
         
+        .drag-handle {
+            margin-right: 15px;
+            color: var(--gray-color);
+            cursor: grab;
+        }
+        
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+        
         .message {
             padding: 10px;
             border-radius: 5px;
             margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
         
         .success {
@@ -197,6 +229,48 @@
             border-left: 4px solid #c62828;
         }
         
+        .info {
+            background-color: #e3f2fd;
+            color: #1565c0;
+            border-left: 4px solid #1565c0;
+        }
+        
+        .sortable-ghost {
+            opacity: 0.5;
+        }
+        
+        .drag-instructions {
+            background-color: #e3f2fd;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            color: var(--dark-color);
+        }
+        
+        .drag-instructions i {
+            margin-right: 5px;
+            color: var(--primary-color);
+        }
+        
+        .save-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background-color: var(--success-color);
+            color: white;
+            border-radius: 5px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+        
+        .save-indicator.visible {
+            opacity: 1;
+        }
+        
         @media (max-width: 768px) {
             .video-item {
                 flex-direction: column;
@@ -208,9 +282,23 @@
                 width: 100%;
                 justify-content: flex-end;
             }
+            
+            .drag-handle {
+                align-self: center;
+                margin-bottom: 10px;
+            }
+            
+            .save-indicator {
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                text-align: center;
+            }
         }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- 引入 Sortable.js 库 -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
 </head>
 <body>
     <header class="admin-header">
@@ -254,17 +342,33 @@
         <div class="admin-section">
             <h2 class="section-title">管理现有视频</h2>
             
+            <div class="drag-instructions">
+                <i class="fas fa-info-circle"></i>
+                提示：拖动视频项可以调整它们的显示顺序，顺序会自动保存
+            </div>
+            
             <div class="video-list" id="videoList">
                 <!-- 视频列表将通过JavaScript动态生成 -->
             </div>
         </div>
     </div>
+    
+    <div id="saveIndicator" class="save-indicator">
+        <i class="fas fa-check-circle"></i>
+        <span>顺序已自动保存</span>
+    </div>
 
     <script>
         // 存储键名
         const STORAGE_KEYS = {
-            VIDEOS: 'bilibiliVideos'
+            VIDEOS: 'bilibiliVideos',
+            VIDEO_ORDER: 'videoOrder'
         };
+        
+        // Sortable实例
+        let sortable;
+        // 保存指示器计时器
+        let saveIndicatorTimer;
         
         document.addEventListener('DOMContentLoaded', function() {
             // 检查登录状态
@@ -275,6 +379,9 @@
             
             // 加载视频列表
             loadVideos();
+            
+            // 初始化拖放排序
+            initSortable();
             
             // 表单提交事件
             document.getElementById('videoForm').addEventListener('submit', function(e) {
@@ -289,9 +396,25 @@
             });
         });
         
+        // 初始化拖放排序功能
+        function initSortable() {
+            const videoList = document.getElementById('videoList');
+            
+            sortable = new Sortable(videoList, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                handle: '.drag-handle',
+                onEnd: function() {
+                    // 拖放结束时自动保存顺序
+                    saveVideoOrder();
+                }
+            });
+        }
+        
         // 加载视频列表
         function loadVideos() {
             const videos = getVideos();
+            const videoOrder = getVideoOrder();
             const videoList = document.getElementById('videoList');
             videoList.innerHTML = '';
             
@@ -300,20 +423,68 @@
                 return;
             }
             
-            videos.forEach((video, index) => {
+            // 如果有保存的顺序，按照顺序显示视频
+            let orderedVideos = videos;
+            if (videoOrder && videoOrder.length === videos.length) {
+                orderedVideos = [];
+                for (const id of videoOrder) {
+                    const video = videos.find(v => v.id === id);
+                    if (video) orderedVideos.push(video);
+                }
+                
+                // 添加任何可能缺失的视频（新添加但未在顺序中的）
+                for (const video of videos) {
+                    if (!orderedVideos.find(v => v.id === video.id)) {
+                        orderedVideos.push(video);
+                    }
+                }
+            }
+            
+            orderedVideos.forEach((video, index) => {
                 const videoItem = document.createElement('div');
                 videoItem.className = 'video-item';
+                videoItem.setAttribute('data-id', video.id);
                 videoItem.innerHTML = `
+                    <div class="drag-handle">
+                        <i class="fas fa-grip-vertical"></i>
+                    </div>
                     <div class="video-info">
                         <div class="video-title">${video.title}</div>
                         <div class="video-date">添加时间: ${new Date(video.date).toLocaleDateString()}</div>
                     </div>
                     <div class="video-actions">
-                        <button class="btn btn-danger" onclick="deleteVideo(${index})">删除</button>
+                        <button class="btn btn-danger" onclick="deleteVideo('${video.id}')">删除</button>
                     </div>
                 `;
                 videoList.appendChild(videoItem);
             });
+        }
+        
+        // 保存视频顺序
+        function saveVideoOrder() {
+            const videoItems = document.querySelectorAll('.video-item');
+            const videoOrder = Array.from(videoItems).map(item => item.getAttribute('data-id'));
+            
+            localStorage.setItem(STORAGE_KEYS.VIDEO_ORDER, JSON.stringify(videoOrder));
+            
+            // 显示保存成功的提示
+            showSaveIndicator();
+        }
+        
+        // 显示保存指示器
+        function showSaveIndicator() {
+            const indicator = document.getElementById('saveIndicator');
+            indicator.classList.add('visible');
+            
+            // 清除之前的计时器
+            if (saveIndicatorTimer) {
+                clearTimeout(saveIndicatorTimer);
+            }
+            
+            // 2秒后隐藏指示器
+            saveIndicatorTimer = setTimeout(() => {
+                indicator.classList.remove('visible');
+            }, 2000);
         }
         
         // 添加新视频
@@ -365,15 +536,22 @@
             }
             
             const videos = getVideos();
-            videos.push({
+            const newVideo = {
+                id: generateId(),
                 iframeCode: iframeCode,
                 bvid: bvid,
                 title: titleInput,
                 desc: descInput,
                 date: new Date().toISOString()
-            });
+            };
             
+            videos.push(newVideo);
             saveVideos(videos);
+            
+            // 更新排序顺序，将新视频添加到末尾
+            const videoOrder = getVideoOrder() || [];
+            videoOrder.push(newVideo.id);
+            localStorage.setItem(STORAGE_KEYS.VIDEO_ORDER, JSON.stringify(videoOrder));
             
             // 清空表单
             document.getElementById('videoForm').reset();
@@ -385,11 +563,17 @@
         }
         
         // 删除视频
-        function deleteVideo(index) {
+        function deleteVideo(videoId) {
             if (confirm('确定要删除这个视频吗？')) {
                 const videos = getVideos();
-                videos.splice(index, 1);
-                saveVideos(videos);
+                const updatedVideos = videos.filter(video => video.id !== videoId);
+                saveVideos(updatedVideos);
+                
+                // 更新排序顺序，移除被删除的视频ID
+                const videoOrder = getVideoOrder() || [];
+                const updatedOrder = videoOrder.filter(id => id !== videoId);
+                localStorage.setItem(STORAGE_KEYS.VIDEO_ORDER, JSON.stringify(updatedOrder));
+                
                 loadVideos();
                 showMessage('视频已删除', 'success');
             }
@@ -408,6 +592,11 @@
             }, 3000);
         }
         
+        // 生成唯一ID
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+        
         // 视频相关函数
         function getVideos() {
             const videosJson = localStorage.getItem(STORAGE_KEYS.VIDEOS);
@@ -416,6 +605,12 @@
         
         function saveVideos(videos) {
             localStorage.setItem(STORAGE_KEYS.VIDEOS, JSON.stringify(videos));
+        }
+        
+        // 获取视频顺序
+        function getVideoOrder() {
+            const orderJson = localStorage.getItem(STORAGE_KEYS.VIDEO_ORDER);
+            return orderJson ? JSON.parse(orderJson) : null;
         }
     </script>
 </body>
