@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作品集管理面板</title>
+    <style>
+        :root {
+            --primary-color: #00a1d6;
+            --secondary-color: #fb7299;
+            --dark-color: #222;
+            --light-color: #f8f9fa;
+            --gray-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .admin-header {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 15px 0;
+            margin-bottom: 30px;
+        }
+        
+        .admin-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+        
+        .admin-logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+        
+        .admin-logo i {
+            margin-right: 10px;
+            color: var(--secondary-color);
+        }
+        
+        .admin-actions {
+            display: flex;
+            align-items: center;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: 10px;
+        }
+        
+        .btn:hover {
+            background-color: #0087b3;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+        }
+        
+        .btn-danger:hover {
+            background-color: #bd2130;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+        
+        .admin-section {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--dark-color);
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--dark-color);
+        }
+        
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus, .form-group textarea:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+        
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .video-list {
+            margin-top: 20px;
+        }
+        
+        .video-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .video-item:last-child {
+            border-bottom: none;
+        }
+        
+        .video-info {
+            flex-grow: 1;
+        }
+        
+        .video-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .video-date {
+            color: var(--gray-color);
+            font-size: 0.9rem;
+        }
+        
+        .video-actions {
+            display: flex;
+        }
+        
+        .video-actions button {
+            margin-left: 10px;
+        }
+        
+        .message {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+        
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+        
+        @media (max-width: 768px) {
+            .video-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .video-actions {
+                margin-top: 10px;
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header class="admin-header">
+        <nav class="admin-nav">
+            <a href="#" class="admin-logo">
+                <i class="fas fa-cog"></i>
+                <span>作品集管理面板</span>
+            </a>
+            <div class="admin-actions">
+                <a href="index.html" class="btn">返回主站</a>
+                <button id="logoutBtn" class="btn btn-danger">退出登录</button>
+            </div>
+        </nav>
+    </header>
+    
+    <div class="container">
+        <div id="message" class="message" style="display: none;"></div>
+        
+        <div class="admin-section">
+            <h2 class="section-title">添加新视频</h2>
+            
+            <form id="videoForm">
+                <div class="form-group">
+                    <label for="videoUrl">B站视频嵌入代码或BV号:</label>
+                    <input type="text" id="videoUrl" placeholder="例如: &lt;iframe src=&quot;//player.bilibili.com/player.html?bvid=BV1PC7pzPEpn&quot;&gt;&lt;/iframe&gt; 或 BV1PC7pzPEpn" required>
+                </div>
+                <div class="form-group">
+                    <label for="videoTitle">视频标题:</label>
+                    <input type="text" id="videoTitle" placeholder="输入视频标题" required>
+                </div>
+                <div class="form-group">
+                    <label for="videoDesc">视频描述:</label>
+                    <textarea id="videoDesc" placeholder="输入视频描述（可选）"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn">添加视频</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="admin-section">
+            <h2 class="section-title">管理现有视频</h2>
+            
+            <div class="video-list" id="videoList">
+                <!-- 视频列表将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 存储键名
+        const STORAGE_KEYS = {
+            VIDEOS: 'bilibiliVideos'
+        };
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查登录状态
+            if (localStorage.getItem('adminAuthenticated') !== 'true') {
+                window.location.href = 'admin.html';
+                return;
+            }
+            
+            // 加载视频列表
+            loadVideos();
+            
+            // 表单提交事件
+            document.getElementById('videoForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                addVideo();
+            });
+            
+            // 退出登录
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                localStorage.removeItem('adminAuthenticated');
+                window.location.href = 'admin.html';
+            });
+        });
+        
+        // 加载视频列表
+        function loadVideos() {
+            const videos = getVideos();
+            const videoList = document.getElementById('videoList');
+            videoList.innerHTML = '';
+            
+            if (videos.length === 0) {
+                videoList.innerHTML = '<p>暂无视频作品</p>';
+                return;
+            }
+            
+            videos.forEach((video, index) => {
+                const videoItem = document.createElement('div');
+                videoItem.className = 'video-item';
+                videoItem.innerHTML = `
+                    <div class="video-info">
+                        <div class="video-title">${video.title}</div>
+                        <div class="video-date">添加时间: ${new Date(video.date).toLocaleDateString()}</div>
+                    </div>
+                    <div class="video-actions">
+                        <button class="btn btn-danger" onclick="deleteVideo(${index})">删除</button>
+                    </div>
+                `;
+                videoList.appendChild(videoItem);
+            });
+        }
+        
+        // 添加新视频
+        function addVideo() {
+            const urlInput = document.getElementById('videoUrl').value.trim();
+            const titleInput = document.getElementById('videoTitle').value.trim();
+            const descInput = document.getElementById('videoDesc').value.trim();
+            
+            if (!titleInput) {
+                showMessage('请输入视频标题', 'error');
+                return;
+            }
+            
+            // 解析视频嵌入代码或BV号
+            let iframeCode = '';
+            let bvid = '';
+            
+            // 检查是否是完整的iframe代码
+            if (urlInput.includes('<iframe')) {
+                // 提取src属性
+                const srcMatch = urlInput.match(/src="([^"]+)"/);
+                if (srcMatch && srcMatch[1]) {
+                    // 确保使用https协议
+                    let src = srcMatch[1].startsWith('//') ? 'https:' + srcMatch[1] : srcMatch[1];
+                    iframeCode = urlInput.replace(srcMatch[1], src);
+                    
+                    // 从src中提取bvid
+                    const bvidMatch = src.match(/bvid=([^&]+)/);
+                    bvid = bvidMatch ? bvidMatch[1] : '';
+                }
+            } 
+            // 检查是否是BV号
+            else if (urlInput.startsWith('BV')) {
+                bvid = urlInput;
+                iframeCode = `<iframe src="https://player.bilibili.com/player.html?isOutside=true&bvid=${bvid}" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"></iframe>`;
+            }
+            // 检查是否是B站视频URL
+            else if (urlInput.includes('bilibili.com')) {
+                const bvidMatch = urlInput.match(/video\/(BV\w+)/);
+                if (bvidMatch && bvidMatch[1]) {
+                    bvid = bvidMatch[1];
+                    iframeCode = `<iframe src="https://player.bilibili.com/player.html?isOutside=true&bvid=${bvid}" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"></iframe>`;
+                }
+            }
+            
+            if (!iframeCode) {
+                showMessage('请输入有效的B站视频嵌入代码、BV号或视频URL', 'error');
+                return;
+            }
+            
+            const videos = getVideos();
+            videos.push({
+                iframeCode: iframeCode,
+                bvid: bvid,
+                title: titleInput,
+                desc: descInput,
+                date: new Date().toISOString()
+            });
+            
+            saveVideos(videos);
+            
+            // 清空表单
+            document.getElementById('videoForm').reset();
+            
+            // 重新加载视频列表
+            loadVideos();
+            
+            showMessage('视频添加成功！', 'success');
+        }
+        
+        // 删除视频
+        function deleteVideo(index) {
+            if (confirm('确定要删除这个视频吗？')) {
+                const videos = getVideos();
+                videos.splice(index, 1);
+                saveVideos(videos);
+                loadVideos();
+                showMessage('视频已删除', 'success');
+            }
+        }
+        
+        // 显示消息
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+            
+            // 3秒后隐藏消息
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 3000);
+        }
+        
+        // 视频相关函数
+        function getVideos() {
+            const videosJson = localStorage.getItem(STORAGE_KEYS.VIDEOS);
+            return videosJson ? JSON.parse(videosJson) : [];
+        }
+        
+        function saveVideos(videos) {
+            localStorage.setItem(STORAGE_KEYS.VIDEOS, JSON.stringify(videos));
+        }
+    </script>
+</body>
+</html>
