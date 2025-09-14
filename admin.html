@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作品集管理后台</title>
+    <style>
+        :root {
+            --primary-color: #00a1d6;
+            --secondary-color: #fb7299;
+            --dark-color: #222;
+            --light-color: #f8f9fa;
+            --gray-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .admin-container {
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+        }
+        
+        .admin-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .admin-logo {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .admin-logo i {
+            margin-right: 10px;
+            color: var(--secondary-color);
+        }
+        
+        .admin-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--dark-color);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--dark-color);
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #0087b3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 161, 214, 0.3);
+        }
+        
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+        
+        .message {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+        
+        .success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+        
+        .back-link {
+            display: block;
+            margin-top: 20px;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        @media (max-width: 576px) {
+            .admin-card {
+                padding: 20px 15px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-card">
+            <div class="admin-logo">
+                <i class="fas fa-lock"></i>
+                <span>管理后台</span>
+            </div>
+            
+            <h2 class="admin-title">管理员登录</h2>
+            
+            <div id="errorMessage" class="message error">
+                用户名或密码错误，请重试！
+            </div>
+            
+            <div id="successMessage" class="message success">
+                登录成功，正在跳转...
+            </div>
+            
+            <form id="adminLoginForm">
+                <div class="form-group">
+                    <label for="adminUsername">用户名</label>
+                    <input type="text" id="adminUsername" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="adminPassword">密码</label>
+                    <input type="password" id="adminPassword" required>
+                </div>
+                
+                <button type="submit" class="btn btn-block">登录</button>
+            </form>
+            
+            <a href="index.html" class="back-link">返回主网站</a>
+        </div>
+    </div>
+
+    <script>
+        // 硬编码的管理员凭据（在实际应用中应该使用更安全的验证方式）
+        const ADMIN_CREDENTIALS = {
+            username: "admin",
+            password: "admin123"
+        };
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('adminLoginForm');
+            const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
+            
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('adminUsername').value.trim();
+                const password = document.getElementById('adminPassword').value.trim();
+                
+                if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+                    // 登录成功
+                    errorMessage.style.display = 'none';
+                    successMessage.style.display = 'block';
+                    
+                    // 在实际应用中，这里应该设置认证令牌或会话
+                    // 这里简单使用localStorage存储登录状态
+                    localStorage.setItem('adminAuthenticated', 'true');
+                    
+                    // 2秒后跳转到管理面板
+                    setTimeout(function() {
+                        window.location.href = 'admin-panel.html';
+                    }, 2000);
+                } else {
+                    // 登录失败
+                    successMessage.style.display = 'none';
+                    errorMessage.style.display = 'block';
+                }
+            });
+            
+            // 检查是否已经登录
+            if (localStorage.getItem('adminAuthenticated') === 'true') {
+                window.location.href = 'admin-panel.html';
+            }
+        });
+    </script>
+</body>
+</html>
