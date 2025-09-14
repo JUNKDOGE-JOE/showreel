@@ -251,7 +251,7 @@
             font-size: 0.9rem;
             margin-bottom: 15px;
             display: -webkit-box;
-            -webkit-line-clamp: 2;
+            -webkit-line-amp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
@@ -769,7 +769,8 @@
         // 存储键名
         const STORAGE_KEYS = {
             VIDEOS: 'bilibiliVideos',
-            COMMENTS: 'videoComments'
+            COMMENTS: 'videoComments',
+            VIDEO_ORDER: 'videoOrder' // 添加视频顺序键
         };
         
         // 初始化页面
@@ -829,9 +830,10 @@
             window.scrollTo(0, 0);
         }
         
-        // 加载视频列表
+        // 加载视频列表（更新以支持排序）
         function loadVideos() {
             const videos = getVideos();
+            const videoOrder = getVideoOrder();
             const videoGrid = document.getElementById('videoGrid');
             videoGrid.innerHTML = '';
             
@@ -846,7 +848,24 @@
                 return;
             }
             
-            videos.forEach((video, index) => {
+            // 如果有保存的顺序，按照顺序显示视频
+            let orderedVideos = videos;
+            if (videoOrder && videoOrder.length === videos.length) {
+                orderedVideos = [];
+                for (const id of videoOrder) {
+                    const video = videos.find(v => v.id === id);
+                    if (video) orderedVideos.push(video);
+                }
+                
+                // 添加任何可能缺失的视频（新添加但未在顺序中的）
+                for (const video of videos) {
+                    if (!orderedVideos.find(v => v.id === video.id)) {
+                        orderedVideos.push(video);
+                    }
+                }
+            }
+            
+            orderedVideos.forEach((video, index) => {
                 const videoCard = document.createElement('div');
                 videoCard.className = 'video-card';
                 
@@ -942,7 +961,21 @@
         // 视频相关函数
         function getVideos() {
             const videosJson = localStorage.getItem(STORAGE_KEYS.VIDEOS);
-            return videosJson ? JSON.parse(videosJson) : [];
+            const videos = videosJson ? JSON.parse(videosJson) : [];
+            
+            // 确保每个视频都有ID（向后兼容）
+            return videos.map(video => {
+                if (!video.id) {
+                    video.id = generateId();
+                }
+                return video;
+            });
+        }
+        
+        // 获取视频顺序
+        function getVideoOrder() {
+            const orderJson = localStorage.getItem(STORAGE_KEYS.VIDEO_ORDER);
+            return orderJson ? JSON.parse(orderJson) : null;
         }
         
         // 评论相关函数
